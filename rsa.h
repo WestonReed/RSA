@@ -17,5 +17,6 @@ public:
 };
 
 void encrypt(mpz_t rot, mpz_t m, mpz_t n, mpz_t e); //encrypt with public key
+std::string encode(std::string s);
 
 #endif

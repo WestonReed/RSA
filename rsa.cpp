@@ -3,13 +3,14 @@
 #include <iostream>
 #include <cstdlib>
 #include <algorithm>
+#include <sstream>
 
 RSA::RSA(int bitlength){
 	//generate key
 	mpz_t max;
 	mpz_init(max);
 	mpz_ui_pow_ui(max, 2, bitlength);
-	mpz_init_set_ui(e, 65537);
+	mpz_init_set_ui(e, 65537); //RFC4871 requires that e=65537
 	gmp_randstate_t state;
 	gmp_randinit_default(state);
 	srand(time(NULL));
@@ -19,6 +20,7 @@ RSA::RSA(int bitlength){
 	mpz_nextprime(p, p);
 	mpz_init_set(q, p);
 	mpz_nextprime(q, q);
+	mpz_nextprime(q, q); //using prime twins is insecure, see: https://math.stackexchange.com/questions/335177/twin-prime-pair-helping-to-factor-large-numbers-quicker
 	mpz_init(n);
 	mpz_mul(n, p, q);
 	mpz_t p_minus_1, q_minus_1, phi;
@@ -67,4 +69,13 @@ void RSA::encryptPub(mpz_t rot, mpz_t m){
 
 void encrypt(mpz_t rot, mpz_t m, mpz_t n, mpz_t e){
 	mpz_powm(rot, m, e, n);
+}
+
+std::string encode(std::string s){
+	std::stringstream ret("");
+
+	for(unsigned int i=0; i<s.length(); i++)
+		ret << std::hex << (int)s[i];
+
+	return ret.str();
 }

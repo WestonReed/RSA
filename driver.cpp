@@ -7,7 +7,7 @@ int main(int argc, char** argv){
 
 	if(argc < 2){
 	usage:
-		std::cout << "Usage: " << argv[0] << " [-p p -q q | {-b b}] -m m | -h" << std::endl;
+		std::cout << "Usage: " << argv[0] << " [-p p -q q | {-b bits}] -m \"message\" | -h" << std::endl;
 		return 0;
 	}
 
@@ -16,12 +16,13 @@ int main(int argc, char** argv){
 	mpz_t m;
 	int bitlength=1024;
 	mpz_init(m);
-	mpz_set_ui(m, -1);
+	mpz_set_si(m, -1);
 	
 	RSA *rsa = nullptr;
 	
 	char opt;
 	while((opt = getopt(argc, argv, "p:q:m:b:h")) != -1){
+		std::string s;
 		switch(opt){
 		case 'p':
 			p = optarg;
@@ -33,7 +34,8 @@ int main(int argc, char** argv){
 			bitlength = std::atoi(optarg);
 			break;
 		case 'm':
-			mpz_set_str(m, optarg, 10);
+			s = optarg;
+			mpz_set_str(m, encode(s).c_str(), 16);
 			break;
 		case 'h':
 			goto usage;
