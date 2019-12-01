@@ -1,37 +1,39 @@
 #include <iostream>
 #include <unistd.h>
+#include <cstring>
 #include "rsa.h"
 
 int main(int argc, char** argv){
 
 	if(argc < 2){
 	usage:
-		std::cout << "Usage: " << argv[0] << " [-p p -q q -e e | -g] -m m | -h" << std::endl;
+		std::cout << "Usage: " << argv[0] << " [-p p -q q | {-b b}] -m m | -h" << std::endl;
 		return 0;
 	}
-	
-	long long p=-1, q=-1;
-	int e=-1, m=-1;
 
+	char *p = (char*)"null";
+	char *q = (char*)"null";
+	mpz_t m;
+	int bitlength=1024;
+	mpz_init(m);
+	mpz_set_ui(m, -1);
+	
 	RSA *rsa = nullptr;
 	
 	char opt;
-	while((opt = getopt(argc, argv, "p:q:e:m:gh")) != -1){
+	while((opt = getopt(argc, argv, "p:q:m:b:h")) != -1){
 		switch(opt){
 		case 'p':
-			p = std::atoll(optarg);
+			p = optarg;
 			break;
 		case 'q':
-			q = std::atoll(optarg);
+			q = optarg;
 			break;
-		case 'e':
-			e = std::atoi(optarg);
+		case 'b':
+			bitlength = std::atoi(optarg);
 			break;
 		case 'm':
-			m = std::atoi(optarg);
-			break;
-		case 'g':
-			rsa = new RSA();
+			mpz_set_str(m, optarg, 10);
 			break;
 		case 'h':
 			goto usage;
@@ -39,40 +41,40 @@ int main(int argc, char** argv){
 		}
 	}
 
-	if(m == -1){
+	if(mpz_cmp_si(m, -1)==0){
 		std::cout << "Error: -m not set" << std::endl;
 		goto usage;
 	}
-	if(p == -1 && q == -1 && e == -1 && !rsa){
-		std::cout << "Error: You must provide a p, q, and e, or generate a key with the -g flag" << std::endl;
-		goto usage;
+	if(strcmp(p, "null")==0 && strcmp(q, "null")==0){
+		rsa = new RSA(bitlength);
 	}
 
 	
-	if(p != -1 || q != -1 || e != -1){
-		if(p == -1){
+	if(strcmp(p, "null")!=0 || strcmp(q, "null")!=0){
+		if(strcmp(p, "null")==0){
 			std::cout << "Error: -p not set" << std::endl;
 			goto usage;
 		}
-		if(q == -1){
+		if(strcmp(q, "null")==0){
 			std::cout << "Error: -q not set" << std::endl;
 			goto usage;
 		}
-		if(e == -1){
-			std::cout << "Error: -e not set" << std::endl;
-			goto usage;
-		}
-		rsa = new RSA(p, q, e);
+		rsa = new RSA(p, q);
 	}
 
 
 	rsa->exportPrivKey();
 	
-	int c = encrypt(m, rsa->getPubN(), rsa->getPubE());
+	mpz_t c;
+	mpz_init(c);
+	encrypt(c, m, rsa->getPubN(), rsa->getPubE());
 
 	std::cout << std::hex << std::showbase;
 	std::cout << "Encrypting " << m << " as " << c << std::endl;
-	std::cout << "Decrypting " << c << " as " << rsa->decrypt(c) << std::endl;
+	mpz_t plaintext;
+	mpz_init(plaintext);
+	rsa->decrypt(plaintext, c);
+	std::cout << "Decrypting " << c << " as " << m << std::endl;
 
 	delete rsa;
 	

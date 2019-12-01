@@ -1,25 +1,21 @@
 #ifndef RSA_H
 #define RSA_H
 
+#include <gmp.h>
+
 class RSA{
 private:
-	int e;
-	long long p, q, d;
-	unsigned long long n;
+	mpz_t p, q, d, n, e;
 public:
-	RSA(); //generate new key
-	RSA(int _p, int _q, int _e); //build key given private key
-	int decrypt(int c); //find m given c, with RSA private key
+	RSA(int bitlength); //generate new key
+	RSA(const char* _p, const char* _q); //build key given private key
+	void decrypt(mpz_t rot, mpz_t c); //find m given c, with RSA private key
 	void exportPrivKey(); //export the private bits
-	int encryptPub(int m);
-	int getPubN(){return n;}
-	int getPubE(){return e;}
+	void encryptPub(mpz_t rot, mpz_t m);
+	__mpz_struct* getPubN(){return n;}
+	__mpz_struct* getPubE(){return e;}
 };
 
-int encrypt(int m, int n, int e); //encrypt with public key
-int modInv(int a, int m); //computes the modular inverse a^-1 mod m
-int fastPower(long long a, unsigned long long b, int p); //computes a^b mod p
-bool millerRabin(int pc, int k);
-
+void encrypt(mpz_t rot, mpz_t m, mpz_t n, mpz_t e); //encrypt with public key
 
 #endif

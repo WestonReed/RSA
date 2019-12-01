@@ -4,89 +4,53 @@
 #include <cstdlib>
 #include <algorithm>
 
-//perform k primaility tests on a prime candidate pc
-bool millerRabin(int pc, int k=100){
-	if(pc==2 || pc==3)
-		return true;
-	if(pc<=1 || pc%2 == 0)
-		return false;
-
-	int s = 0;
-	int r = pc-1;
-
-	while(r & 1 == 0){
-		s++;
-		r = floor(r/2);
-	}
-
-	for(int i=0; i<k; ++i){
-		int a = rand()%pc+2; //random number from 2 to n-1
-		int x = fastPower(a, r, pc);
-		if(x!=1 && x!=pc-1){
-			int j = 1;
-			while(j < s && x != pc-1){
-				x = fastPower(x, 2, pc);
-				if(x == 1)
-					return false;
-				j++;
-			}
-			if(x != pc-1)
-				return false;
-		}
-	}
-
-	return true;
-}
-
-int fastPower(long long a, unsigned long long b, int p){
-	long long ret = 1;
-	a %= p;
-	while(b > 0){
-		if(b & 1)
-			ret = (ret*a) % p;
-		b /= 2;
-		a = (a*a) % p;
-	}
-	return (int)ret;
-}
-
-int modInv(int a, int m){
-	a = a%m; 
-    for (int x=1; x<m; x++) 
-		if ((a*x) % m == 1) 
-			return x; 
-}
-
-RSA::RSA(){
+RSA::RSA(int bitlength){
 	//generate key
+	mpz_t max;
+	mpz_init(max);
+	mpz_ui_pow_ui(max, 2, bitlength);
+	mpz_init_set_ui(e, 65537);
+	gmp_randstate_t state;
+	gmp_randinit_default(state);
 	srand(time(NULL));
-	p = rand()%10000+1000;
-	while(!millerRabin(p))
-		p++;
-	q=p-1000;
-	while(!millerRabin(q) || q==p)
-		q++;
-
-	int phi = (p-1) * (q-1);
-	e = 2;
-	while(std::__gcd(e, phi) != 1)
-		e++;
-	
-	n = p*q;
-	d = modInv(e, (p-1)*(q-1));
+	gmp_randseed_ui(state, rand());
+	mpz_init(p);
+	mpz_urandomm(p, state, max);
+	mpz_nextprime(p, p);
+	mpz_init_set(q, p);
+	mpz_nextprime(q, q);
+	mpz_init(n);
+	mpz_mul(n, p, q);
+	mpz_t p_minus_1, q_minus_1, phi;
+	mpz_init(p_minus_1);
+	mpz_init(q_minus_1);
+	mpz_init(phi);
+    mpz_sub_ui(p_minus_1, p, 1);
+    mpz_sub_ui(q_minus_1, q, 1);
+    mpz_mul(phi, p_minus_1, q_minus_1);
+	mpz_invert(d, e, phi);
+	gmp_randclear(state);
 }
 
-RSA::RSA(int _p, int _q, int _e){
+RSA::RSA(const char* _p, const char* _q){
 	//build key
-	p = _p;
-	q = _q;
-	e = _e;
-	n = p*q;
-	d = modInv(e, (p-1)*(q-1));
+	mpz_init_set_str(p, _p, 10);
+	mpz_init_set_str(q, _q, 10);
+	mpz_init_set_ui(e, 65537);
+	mpz_init(n);
+	mpz_mul(n, p, q);
+	mpz_t p_minus_1, q_minus_1, phi;
+	mpz_init(p_minus_1);
+    mpz_init(q_minus_1);
+    mpz_init(phi);
+	mpz_sub_ui(p_minus_1, p, 1);
+	mpz_sub_ui(q_minus_1, q, 1);
+	mpz_mul(phi, p_minus_1, q_minus_1);
+	mpz_invert(d, e, phi);		
 }
 
-int RSA::decrypt(int c){
-	return fastPower(c, d, n);
+void RSA::decrypt(mpz_t rot, mpz_t c){
+	mpz_powm(rot, c, d, n);
 }
 
 void RSA::exportPrivKey(){
@@ -97,10 +61,10 @@ void RSA::exportPrivKey(){
 	std::cout << "n = " << n << std::endl; 
 }
 
-int RSA::encryptPub(int m){
-	return encrypt(m, e, n);
+void RSA::encryptPub(mpz_t rot, mpz_t m){
+	encrypt(rot, m, e, n);
 }
 
-int encrypt(int m, int n, int e){
-	return fastPower(m, e, n);
+void encrypt(mpz_t rot, mpz_t m, mpz_t n, mpz_t e){
+	mpz_powm(rot, m, e, n);
 }
