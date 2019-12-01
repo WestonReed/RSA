@@ -27,9 +27,9 @@ RSA::RSA(int bitlength){
 	mpz_init(p_minus_1);
 	mpz_init(q_minus_1);
 	mpz_init(phi);
-    mpz_sub_ui(p_minus_1, p, 1);
-    mpz_sub_ui(q_minus_1, q, 1);
-    mpz_mul(phi, p_minus_1, q_minus_1);
+	mpz_sub_ui(p_minus_1, p, 1);
+	mpz_sub_ui(q_minus_1, q, 1);
+	mpz_mul(phi, p_minus_1, q_minus_1);
 	mpz_invert(d, e, phi);
 	gmp_randclear(state);
 }
@@ -43,8 +43,8 @@ RSA::RSA(const char* _p, const char* _q){
 	mpz_mul(n, p, q);
 	mpz_t p_minus_1, q_minus_1, phi;
 	mpz_init(p_minus_1);
-    mpz_init(q_minus_1);
-    mpz_init(phi);
+	mpz_init(q_minus_1);
+	mpz_init(phi);
 	mpz_sub_ui(p_minus_1, p, 1);
 	mpz_sub_ui(q_minus_1, q, 1);
 	mpz_mul(phi, p_minus_1, q_minus_1);
